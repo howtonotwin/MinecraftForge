@@ -19,52 +19,80 @@
 
 package net.minecraftforge.event.entity.player;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.item.ItemBow;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import javax.annotation.Nonnull;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
-
-import javax.annotation.Nonnull;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.eventhandler.Event.HasResult;
 
 /**
- * ArrowLooseEvent is fired when a player stops using a bow.<br>
- * This event is fired whenever a player stops using a bow in
- * {@link ItemBow#onPlayerStoppedUsing(ItemStack, World, EntityLivingBase, int)}.<br>
- * <br>
- * {@link #bow} contains the ItemBow ItemStack that was used in this event.<br>
- * {@link #charge} contains the value for how much the player had charged before stopping the shot.<br>
- * <br>
- * This event is {@link Cancelable}.<br>
- * If this event is canceled, the player does not stop using the bow.<br>
- * <br>
- * This event does not have a result. {@link HasResult}<br>
- * <br>
+ * Fired whenever a player stops using a bow.
+ * <p>
+ * This event has a {@link HasResult result}. If {@code DEFAULT}, the arrow will only be fired if the {@link #getPower power} is over the threshold of {@code .1}. If {@code DENY},
+ * the arrow will not fire, and if {@code ALLOW}, it always will.
+ * <p>
  * This event is fired on the {@link MinecraftForge#EVENT_BUS}.
  **/
-@Cancelable
+@HasResult
 public class ArrowLooseEvent extends PlayerEvent
 {
     private final ItemStack bow;
+    private ItemStack ammo;
     private final World world;
-    private final boolean hasAmmo;
-    private int charge;
+    private float power;
 
-    public ArrowLooseEvent(EntityPlayer player, @Nonnull ItemStack bow, World world, int charge, boolean hasAmmo)
+    public ArrowLooseEvent(@Nonnull ItemStack bow, @Nonnull ItemStack ammo, World world, EntityPlayer player, float power)
     {
         super(player);
         this.bow = bow;
         this.world = world;
-        this.charge = charge;
-        this.hasAmmo = hasAmmo;
+        this.ammo = ammo;
+        this.power = power;
     }
 
     @Nonnull
-    public ItemStack getBow() { return this.bow; }
-    public World getWorld() { return this.world; }
-    public boolean hasAmmo() { return this.hasAmmo; }
-    public int getCharge() { return this.charge; }
-    public void setCharge(int charge) { this.charge = charge; }
+    public ItemStack getBow()
+    {
+        return bow;
+    }
+
+    /**
+     * Gets the ammo to be shot. If this stack is invalid, and the player is in creative mode, or the bow has Infinity on it, then it will default to the vanilla arrow.
+     * 
+     * @return The arrow to use
+     */
+    @Nonnull
+    public ItemStack getAmmo()
+    {
+        return ammo;
+    }
+
+    public void setAmmo(ItemStack ammo)
+    {
+        this.ammo = ammo;
+    }
+
+    public World getWorld()
+    {
+        return world;
+    }
+
+    /**
+     * Gets the power of the arrow, which is calculated from the charge of the bow.
+     * <p>
+     * If the power is less than {@code .1} and the result of this event is {@code DEFAULT}, the arrow will not fire. If the result is {@code ALLOW}, it will always fire.
+     * 
+     * @return The power with which the arrow will be fired
+     */
+    public float getPower()
+    {
+        return power;
+    }
+
+    public void setPower(float power)
+    {
+        this.power = power;
+    }
 }

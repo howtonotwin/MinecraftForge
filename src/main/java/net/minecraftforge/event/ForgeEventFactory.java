@@ -28,6 +28,7 @@ import java.util.Random;
 import com.google.common.base.Predicate;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.command.ICommandSender;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -38,6 +39,8 @@ import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayer.SleepResult;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Enchantments;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -592,12 +595,18 @@ public class ForgeEventFactory
         return event.getAction();
     }
 
-    public static int onArrowLoose(ItemStack stack, World world, EntityPlayer player, int charge, boolean hasAmmo)
+    public static ArrowLooseEvent onArrowLoose(ItemStack bow, ItemStack ammo, World world, EntityPlayer player, float power)
     {
-        ArrowLooseEvent event = new ArrowLooseEvent(player, stack, world, charge, hasAmmo);
-        if (MinecraftForge.EVENT_BUS.post(event))
-            return -1;
-        return event.getCharge();
+        ArrowLooseEvent event = new ArrowLooseEvent(bow, ammo, world, player, power);
+        MinecraftForge.EVENT_BUS.post(event);
+        if (event.getAmmo().func_190926_b())
+        {
+            if (event.getEntityPlayer().capabilities.isCreativeMode || EnchantmentHelper.getEnchantmentLevel(Enchantments.INFINITY, event.getBow()) > 0)
+                event.setAmmo(new ItemStack(Items.ARROW));
+            else
+                event.setResult(Result.DENY);
+        }
+        return event;
     }
 
     public static boolean onReplaceBiomeBlocks(IChunkGenerator gen, int x, int z, ChunkPrimer primer, World world)
